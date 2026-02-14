@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+/*
+ * shadcn/ui用のCSS変数定義
+ *
+ * カラートークン（primary, success, warning, info）およびスペーシング設計は
+ * デジタル庁デザインシステムウェブサイト（https://design.digital.go.jp/dads/）の
+ * コンテンツを参考に加工して作成しています。
+ * 利用規約: https://design.digital.go.jp/dads/introduction/notices/
+ */
+@theme {
+  /* ライトモード用カラー */
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222.2 84% 4.9%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222.2 84% 4.9%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222.2 84% 4.9%);
+  --color-primary: hsl(217 91% 50%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(210 40% 96.1%);
+  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  --color-accent: hsl(210 40% 96.1%);
+  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+  --color-border: hsl(214.3 31.8% 91.4%);
+  --color-input: hsl(214.3 31.8% 91.4%);
+  --color-ring: hsl(217 91% 50%);
+
+  /* リソース管理専用カラー */
+  --color-success: hsl(142 71% 45%);
+  --color-warning: hsl(38 92% 50%);
+  --color-info: hsl(199 89% 48%);
+
+  /* 角丸 */
+  --radius-lg: 0.5rem;
+  --radius-md: calc(var(--radius-lg) - 2px);
+  --radius-sm: calc(var(--radius-lg) - 4px);
+}
+
+/* ダークモード用CSS変数 - prefers-color-scheme */
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-background: hsl(222.2 84% 4.9%);
+    --color-foreground: hsl(210 40% 98%);
+    --color-card: hsl(222.2 84% 4.9%);
+    --color-card-foreground: hsl(210 40% 98%);
+    --color-popover: hsl(222.2 84% 4.9%);
+    --color-popover-foreground: hsl(210 40% 98%);
+    --color-primary: hsl(217 91% 65%);
+    --color-primary-foreground: hsl(222.2 47.4% 11.2%);
+    --color-secondary: hsl(217.2 32.6% 17.5%);
+    --color-secondary-foreground: hsl(210 40% 98%);
+    --color-muted: hsl(217.2 32.6% 17.5%);
+    --color-muted-foreground: hsl(215 20.2% 65.1%);
+    --color-accent: hsl(217.2 32.6% 17.5%);
+    --color-accent-foreground: hsl(210 40% 98%);
+    --color-destructive: hsl(0 62.8% 30.6%);
+    --color-destructive-foreground: hsl(210 40% 98%);
+    --color-border: hsl(217.2 32.6% 17.5%);
+    --color-input: hsl(217.2 32.6% 17.5%);
+    --color-ring: hsl(217 91% 65%);
+    --color-success: hsl(142 71% 60%);
+    --color-warning: hsl(38 92% 65%);
+    --color-info: hsl(199 89% 63%);
+  }
+}
+
+/* color-scheme for native elements */
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+  }
+}
+
+/* ベーススタイル */
+body {
+  font-family:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+}
+
+/* Class-based dark mode overrides */
+:root.dark {
+  --color-background: hsl(222.2 84% 4.9%);
+  --color-foreground: hsl(210 40% 98%);
+  --color-card: hsl(222.2 84% 4.9%);
+  --color-card-foreground: hsl(210 40% 98%);
+  --color-popover: hsl(222.2 84% 4.9%);
+  --color-popover-foreground: hsl(210 40% 98%);
+  --color-primary: hsl(217 91% 65%);
+  --color-primary-foreground: hsl(222.2 47.4% 11.2%);
+  --color-secondary: hsl(217.2 32.6% 17.5%);
+  --color-secondary-foreground: hsl(210 40% 98%);
+  --color-muted: hsl(217.2 32.6% 17.5%);
+  --color-muted-foreground: hsl(215 20.2% 65.1%);
+  --color-accent: hsl(217.2 32.6% 17.5%);
+  --color-accent-foreground: hsl(210 40% 98%);
+  --color-destructive: hsl(0 62.8% 30.6%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+  --color-border: hsl(217.2 32.6% 17.5%);
+  --color-input: hsl(217.2 32.6% 17.5%);
+  --color-ring: hsl(217 91% 65%);
+  --color-success: hsl(142 71% 60%);
+  --color-warning: hsl(38 92% 65%);
+  --color-info: hsl(199 89% 63%);
+}
+
+/* SVAR Gantt テーマオーバーライド: shadcn/ui CSS変数に追従 */
+.schedule-gantt-container :is(.wx-willow-theme, .wx-willow-dark-theme) {
+  --wx-background: var(--color-background);
+  --wx-background-alt: var(--color-muted);
+  --wx-background-hover: var(--color-accent);
+  --wx-color-font: var(--color-foreground);
+  --wx-border: 1px solid var(--color-border);
+  --wx-gantt-border-color: var(--color-border);
+  --wx-gantt-border: 1px solid var(--color-border);
+  --wx-gantt-select-color: var(--color-accent);
+  --wx-grid-header-font-color: var(--color-muted-foreground);
+  --wx-grid-body-font-color: var(--color-foreground);
+  --wx-grid-body-row-border: 1px solid var(--color-border);
+  --wx-grid-body-cell-border: 1px solid var(--color-border);
+  --wx-timescale-font-color: var(--color-muted-foreground);
+  --wx-timescale-border: 1px solid var(--color-border);
+  --wx-table-border: 1px solid var(--color-border);
+  --wx-table-cell-border: 1px solid var(--color-border);
+  --wx-table-header-border: 1px solid var(--color-border);
+  --wx-table-header-cell-border: 1px solid var(--color-border);
+  --wx-gantt-holiday-background: var(--color-muted);
+  --wx-gantt-holiday-color: var(--color-muted-foreground);
+  --wx-gantt-icon-color: var(--color-muted-foreground);
+  --wx-gantt-link-color: var(--color-muted-foreground);
+  --wx-gantt-link-marker-background: var(--color-muted);
+  --wx-gantt-link-marker-color: var(--color-muted-foreground);
+  --wx-gantt-progress-border-color: var(--color-border);
+  --wx-tooltip-background: var(--color-popover);
+  --wx-tooltip-font-color: var(--color-popover-foreground);
+}
+
+/* Landing page animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out both;
+}
+
+/* Force light mode override */
+:root.light {
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222.2 84% 4.9%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222.2 84% 4.9%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222.2 84% 4.9%);
+  --color-primary: hsl(217 91% 50%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(210 40% 96.1%);
+  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  --color-accent: hsl(210 40% 96.1%);
+  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+  --color-border: hsl(214.3 31.8% 91.4%);
+  --color-input: hsl(214.3 31.8% 91.4%);
+  --color-ring: hsl(217 91% 50%);
+}
