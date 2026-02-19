@@ -1,17 +1,5 @@
 {
   "mcpServers": {
-    "brave-search": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@anthropic/mcp-brave-search"],
-      "env": {}
-    },
-    "context7": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"],
-      "env": {}
-    },
     "github": {
       "type": "http",
       "url": "https://api.github.com/mcp"

@@ -4,6 +4,7 @@ description: >
   Generates design documents and task breakdowns for feature implementation.
   Triggers: plan, design, decompose, analyze impact, task breakdown.
   Read-only — never modifies source code. Outputs a structured plan for human review.
+context: fork
 ---
 
 # Plan
@@ -75,6 +76,12 @@ description: >
 - `Glob` / `Grep` — ファイル・コード検索
 - `Read` — ファイル内容の確認
 - `npx depcruise` — 依存関係の可視化（必要に応じて）
+
+## 出力ファイル
+
+- スキル経由の場合: `.claude/skills/<skill-name>/plan.md`
+- タスクファイルで指定された場合: `.claude/tasks/PLAN_<タスク名>.md`
+- 出力ファイルはセッション固有の成果物。完了後は `.claude/tasks/` に移動または削除する
 
 ## 禁止事項
 

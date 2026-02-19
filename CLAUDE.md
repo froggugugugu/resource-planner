@@ -15,6 +15,12 @@
   - `/ui-ux-design` — デザインシステム準拠のUI/UX設計・レビュー・実装
   - `/e2e-testing` — Playwright E2Eテスト作成
   - `/code-review` — コードレビュー（読み取り専用）
+- スキル選定の判断基準:
+  - 新機能実装 → `/implementing-features`
+  - UI調整・ダークモード・a11y → `/ui-ux-design`
+  - 大きな変更の事前設計 → `/plan`
+  - PR前の品質確認 → `/code-review`
+  - ユーザーフローの自動テスト → `/e2e-testing`
 
 ## 開発原則
 
@@ -79,6 +85,9 @@
 - `shared/`, `stores/`, `infrastructure/` など共有レイヤーの変更は逐次で行う
 - 大きな機能追加は `/plan` スキルで事前にタスク分解し、並行可能な単位を特定する
 - 並行タスク間の依存関係を明示し、ブロッキングを最小化する
+- Agent Teams使用時は `.claude/teams/TEAMCREATE_TEMPLATE.md` のワークフローに従う
+- PLがタスク分解・依存関係設定・割り当てを行い、メンバーは割り当てタスクのみ実装する
+- 共有レイヤーの変更はPLが逐次割り当てし、並行編集を回避する
 
 ## 実装ワークフロー
 
@@ -115,12 +124,23 @@
 
 ## ツール利用方針
 
-- ドキュメント参照: まず `curl` で公式サイトを確認し、
-  それで不十分な場合のみContext7 MCPを使うこと
+- ドキュメント参照の優先順位:
+  1. プロジェクト内の `docs/` ファイル
+  2. `WebFetch` で公式サイトを直接参照
+  3. Context7 MCP（公式サイトで不十分な場合のみ）
+  4. `WebSearch`（最新情報が必要な場合のみ）
+- Playwright MCP: E2Eテストのデバッグ・ビジュアル確認に使用
+- Sentry MCP: 本番エラーの調査・分析に使用
+- draw.io MCP: アーキテクチャ図・フロー図の作成に使用
+- `frontend-design`プラグイン: 新規画面のプロトタイピング・モックアップ生成
+- `/ui-ux-design`スキル: プロジェクトデザインシステム準拠のUI実装・レビュー
 
 ## セキュリティ強化
 
-- セキュリティには十分注意して、問題ないかを確認する
+- localStorageに機密情報（パスワード、トークン等）を保存しない
+- innerHTMLの直接操作や安全でないHTML挿入は使用禁止
+- ユーザー入力はZodスキーマで必ずバリデーション
+- 依存パッケージの脆弱性は `npm audit` で定期確認
 
 ## Git操作ポリシー
 
@@ -132,7 +152,7 @@
 
 ## プロジェクト固有情報
 
-@docs/project.md
-@docs/architecture.md
-@docs/data-model.md
-@docs/development-patterns.md
+@docs/project.md              <!-- 技術スタック・コマンド・ルーティング・ストア一覧 -->
+@docs/architecture.md          <!-- ディレクトリ構成・テスト一覧・ドキュメント責務 -->
+@docs/data-model.md            <!-- Zodスキーマ・フィールド仕様・バリデーション -->
+@docs/development-patterns.md  <!-- コード規約・落とし穴・E2Eパターン・デザインシステム -->
