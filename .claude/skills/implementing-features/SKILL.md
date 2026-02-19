@@ -26,6 +26,8 @@ description: >
 3. **最小実装** — テストが通るコードを書く
 4. **リファクタリング** — テストが通ったまま整理
 5. **検証** — `npm run test:run && npm run check && npm run build && npx depcruise src --config`
+   ※ 上記検証コマンドは `.husky/pre-push` と同等。push時に自動実行されるが、
+     コミット前に手動確認したい場合に使用する
 6. **ドキュメント更新** — 下記「ドキュメント同期」に従い `docs/` を更新
 
 ## 出力フォーマット

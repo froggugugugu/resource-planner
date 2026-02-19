@@ -1,6 +1,7 @@
 ---
 name: code-review
 description: Reviews code changes for quality, conventions compliance, performance, and security. Applies when the user asks to review code, check implementation quality, or validate changes against project standards. Read-only — never modifies source code.
+context: fork
 ---
 
 # Code Review
@@ -44,7 +45,7 @@ description: Reviews code changes for quality, conventions compliance, performan
 - Zustandストアの使い方が正しいか（[docs/development-patterns.md](../../../docs/development-patterns.md)参照）
 - Zodスキーマと型の一貫性
 - `@/`パスエイリアスの使用
-- 依存方向ルールに違反していないか:
+- 依存方向ルールに違反していないか（`CLAUDE.md`「アーキテクチャガバナンス」参照）
   - `features/X` → `features/Y` の直接import禁止
   - `shared` → `features` 禁止
   - `infrastructure` → `features` 禁止
