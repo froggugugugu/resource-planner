@@ -1,15 +1,31 @@
 ---
 name: implementing-features
+version: 1.0.0
 description: >
-  Implements features, fixes bugs, and refactors code following TDD workflow.
-  Triggers: implement, create, fix, modify, add, refactor, build, develop, change functionality.
-  Covers: components, stores, schemas, utilities, styling, and docs/ synchronization.
+  This skill should be used when the user asks to "implement a feature", "fix a bug", "create a component",
+  or mentions "実装", "機能追加", "バグ修正", "コンポーネント作成".
+  Follows TDD workflow. Covers components, stores, schemas, utilities, styling, docs/ and project-config.md synchronization.
+  Takes optional argument: /implementing-features <task-file or instruction>
+argument-hint: "<タスクファイル or 指示>"
+allowed-tools: Read, Glob, Grep, Edit, Write, Bash(git *), WebSearch, WebFetch, Agent, mcp__context7__resolve-library-id, mcp__context7__query-docs
+context: main
 ---
 
 # Implementing Features
 
 プロジェクトの開発標準に従い、TDDで機能実装・バグ修正・リファクタリングを行う。
 `CLAUDE.md` の方針を厳守すること。プロジェクト固有のコードパターンは [docs/development-patterns.md](../../../docs/development-patterns.md) を参照。
+
+## 前提条件
+
+| 参照ファイル | 用途 | スタブ時のフォールバック |
+| ------------ | ---- | ----------------------- |
+| `docs/project.md` | コマンド・技術スタック | `project-config.md` §1〜§3 を直接参照 |
+| `docs/architecture.md` | ディレクトリ構成・テスト配置 | `project-config.md` §4 を直接参照 |
+| `docs/data-model.md` | スキーマ定義 | コードベースの Zod スキーマを直接読み取る |
+| `docs/development-patterns.md` | コード規約・落とし穴 | `project-config.md` §2, §11 を直接参照 |
+
+このスキルは `docs/` ファイルの生成・更新も担う。スタブの場合は実行後に自動生成する。
 
 ## 基本姿勢
 
@@ -19,83 +35,171 @@ description: >
 - 仕様書にない機能を追加しない
 - ユーザーデータの暗黙的な削除・上書きをしない
 
+## 使い方
+
+```text
+/implementing-features <タスクファイル or 実装指示>
+```
+
+引数は省略可能。省略した場合はユーザーに対話的に確認する。
+タスクファイルを指定した場合はその内容を読み取り、要件と受け入れ基準を把握する。
+
+### 例
+
+```text
+/implementing-features ユーザー認証機能を追加する
+/implementing-features output/tasks/TASK_auth.md
+/implementing-features .claude/tasks/TASK_001.md
+```
+
+### 出力先
+
+- 実装コード: `src/` 配下（プロジェクトのディレクトリ構成に従う）
+- テストコード: 各モジュールの `__tests__/` ディレクトリ
+- カバレッジレポート: `testreport/coverage/`
+
+### 他スキルとの連携
+
+| 前工程 | 本スキル | 後工程 |
+| ------ | -------- | ------ |
+| `/plan` `/architecture` | `/implementing-features` | `/code-review` `/e2e-testing` |
+
+## 設計原則
+
+以下の原則に従う。プロジェクト固有の適用については `docs/development-patterns.md` を参照。
+
+- **SRP**: 1コンポーネント=1表示責務、1ストア=1ドメイン、1関数=1計算。肥大化したらフック/アクション分割
+- **OCP**: 既存コードの内部変更より、props/合成/新アクション追加で拡張する
+- **LSP**: 派生型（Create/Update）は基底スキーマのサブセットであること
+- **ISP**: propsは最小限、セレクタで必要フィールドのみ取得、型は用途別に分割
+- **DIP**: レイヤールール遵守（上位→下位の一方向）、機能モジュール間は共有層経由
+- **KISS**: ネスト3段以上は早期return/関数抽出で平坦化。汎用化より直接的な実装を優先
+- **YAGNI**: 仕様書にない機能は実装しない。将来のための抽象化・フラグは作らない。未使用コードは削除
+- **DRY**: 3箇所以上の重複で共通化を検討（Rule of Three）。2箇所の類似は無理に共通化しない
+
 ## 実装ワークフロー（TDD）
 
 1. **仕様確認** — 曖昧な点があれば選択肢を示して質問
-2. **テスト作成** — Vitest + Testing Library で正常系・異常系・境界値を書く
+2. **テスト作成** — テストフレームワーク（`docs/project.md` 参照）で正常系・異常系・境界値を書く
 3. **最小実装** — テストが通るコードを書く
 4. **リファクタリング** — テストが通ったまま整理
-5. **検証** — `npm run test:run && npm run check && npm run build && npx depcruise src --config`
-   ※ 上記検証コマンドは `.husky/pre-push` と同等。push時に自動実行されるが、
-     コミット前に手動確認したい場合に使用する
-6. **ドキュメント更新** — 下記「ドキュメント同期」に従い `docs/` を更新
+5. **検証** — プロジェクトの検証コマンド（`docs/project.md` 参照）を実行
+6. **ドキュメント更新** — 下記「ドキュメント同期」に従い `docs/` と `project-config.md` を更新
 
-## 出力フォーマット
+## 出力契約
 
-実装時は以下の順で出力:
-1. 実装方針（簡潔に）
-2. テストコード
-3. 本体コード
+### ゲート別出力仕様
+
+#### 🚏 設計ゲート出力（実装前）
+
+| フィールド | 型 | 必須 | 制約 |
+| ---------- | -- | ---- | ---- |
+| 要件解釈 | 箇条書き | ✅ | 受け入れ基準を1件1行で列挙 |
+| 影響ファイル | テーブル（ファイル, 変更種別） | ✅ | 変更種別 ∈ {追加, 変更, 削除} |
+| テスト方針 | 箇条書き | ✅ | テスト対象と期待動作を明記 |
+| 【仮定】事項 | 箇条書き | 条件付き | 仕様が曖昧な場合のみ |
+
+#### 🚏 実装ゲート出力（実装後）
+
+| フィールド | 型 | 必須 | 制約 |
+| ---------- | -- | ---- | ---- |
+| テスト結果 | `X pass / Y fail` | ✅ | 数値のみ。失敗時は原因を1行で付記 |
+| カバレッジ | `行: X% / 分岐: Y%` | ✅ | 目標との差分を明記 |
+| 静的解析 | `エラー: X件 / 警告: Y件` | ✅ | 0件でも明記 |
+| 依存方向 | `違反: X件` | 条件付き | 依存方向チェックが有効な場合 |
+| 変更ファイル数 | 整数 | ✅ | |
+
+#### 🚏 最終ゲート出力
+
+実装チェックリスト（CLAUDE.md定義）の全項目を `[x]` / `[ ]` で提示する。
+
+### 語彙制約
+
+| 用語 | 定義 |
+| ---- | ---- |
+| 【仮定】 | 仕様に明記されていない前提条件 |
+| pass / fail | テスト結果の状態 |
+| 違反 | 依存方向ルールへの抵触 |
+| 後方互換 | 既存データの読み込みが壊れないこと |
+
+### 構造制約
+
+- 実装コード出力は必ず **テストコード → 本体コード** の順（テストファースト）
+- 各コードブロックにはファイルパスをコメントで付記
+- テスト記述は `describe` / `it` の説明文を日本語で記述
+- 品質レポートはプレーンテキスト（Markdownテーブル可）で出力し、JSON不可
 
 ## アーキテクチャ準拠
 
-- **Feature-Sliced Design**: `src/features/{feature}/` 配下に components, pages, utils
-- **状態管理**: Zustand 5 + persist middleware（セレクタの注意点は [docs/development-patterns.md](../../../docs/development-patterns.md) 参照）
-- **バリデーション**: Zod スキーマで型安全に（`src/shared/types/`）
-- **UI**: Tailwind CSS 4 + shadcn/ui、ダークモード必須
-- **パスエイリアス**: `@/` → `src/`
+- プロジェクトのアーキテクチャパターン（`docs/architecture.md` 参照）に従う
+- 状態管理のパターン（`docs/development-patterns.md` 参照）に従う
+- バリデーションスキーマは型定義と一致させる
+- ダークモード対応が必要な場合はセマンティックカラーを使用
+- パスエイリアスは `project-config.md` の定義に従う
 
 ## データモデル変更時
 
-- Zodスキーマを先に定義
-- 既存 `DatabaseSchema` との後方互換を維持（optional追加）
-- localStorage永続化層（`jsonStorage`）への影響を確認
+- スキーマを先に定義する
+- 既存データとの後方互換を維持する（optional追加）
+- データ永続化層への影響を確認する
 
 ## ドキュメント同期
 
-実装変更後、影響を受ける `docs/` ファイルを必ず更新する。
+実装変更後、影響を受ける `docs/` ファイルと `project-config.md` を更新する。
 ドキュメントの正確性は実装と同等の品質基準で扱う。
 
-### 更新トリガーと対象ファイル
+### docs/ の更新トリガー
 
-| 変更内容                         | 更新対象               |
-| -------------------------------- | ---------------------- |
-| ルート追加・変更・削除           | `docs/project.md`      |
-| Zustandストア追加・変更・削除    | `docs/project.md`      |
-| npmスクリプト追加・変更          | `docs/project.md`      |
-| 依存パッケージ追加・バージョン変更 | `docs/project.md`    |
-| feature追加・削除・リネーム      | `docs/architecture.md` |
-| コンポーネント追加・削除         | `docs/architecture.md` |
-| テストファイル追加・削除         | `docs/architecture.md` |
-| shared/infrastructure変更        | `docs/architecture.md` |
-| コードパターン・落とし穴の発見/変更 | `docs/development-patterns.md` |
-| Zodスキーマのフィールド追加・変更 | `docs/data-model.md`  |
-| バリデーションルール変更         | `docs/data-model.md`   |
-| フォームスキーマ追加・変更       | `docs/data-model.md`   |
+| 変更内容                             | 更新対象                         |
+| ------------------------------------ | -------------------------------- |
+| ルート追加・変更・削除               | `docs/project.md`                |
+| ストア追加・変更・削除               | `docs/project.md`                |
+| npmスクリプト追加・変更              | `docs/project.md`                |
+| 依存パッケージ追加・バージョン変更   | `docs/project.md`                |
+| feature追加・削除・リネーム          | `docs/architecture.md`           |
+| コンポーネント追加・削除             | `docs/architecture.md`           |
+| テストファイル追加・削除             | `docs/architecture.md`           |
+| 共有レイヤー変更                     | `docs/architecture.md`           |
+| コードパターン・落とし穴の発見/変更  | `docs/development-patterns.md`   |
+| スキーマのフィールド追加・変更       | `docs/data-model.md`             |
+| バリデーションルール変更             | `docs/data-model.md`             |
+| フォームスキーマ追加・変更           | `docs/data-model.md`             |
 
-### 更新手順
+### project-config.md の更新トリガー
 
-1. 変更した実装コードを読み、影響を受ける `docs/` ファイルを特定する
-2. 対象ファイルの該当箇所を実装に合わせて更新する
-3. 更新内容を品質レポートの変更影響範囲に含める
+| 変更内容                                 | 更新対象セクション                       |
+| ---------------------------------------- | ---------------------------------------- |
+| 新しい落とし穴・アンチパターンの発見     | §11（既知の落とし穴）                    |
+| 依存パッケージの追加・バージョン変更     | §2（技術スタック）                       |
+| npmスクリプトの追加・変更                | §3（コマンド）                           |
 
 ## テストポリシー
 
 - テストは「仕様を説明するもの」
 - 重要なロジックには必ずテストケースを用意
-- カバレッジ80%以上を目標
-- `describe` / `it` の説明文は日本語で振る舞いを明記
-- ユニットテストカバレッジのレポートをファイル出力し提示
+- カバレッジ目標は `project-config.md` セクション6 に定義
+- `describe` / `it` の説明文は振る舞いを明記
+- カバレッジレポートは `testreport/coverage/` に出力し、結果を提示する
+
+### カバレッジレポート出力
+
+テスト実行時はカバレッジレポートを `testreport/coverage/` に出力する。
+出力先の設定例（`project-config.md` §3 のテストフレームワークに合わせて設定）:
+
+```bash
+# Vitest の場合
+# vite.config.ts の test.coverage に以下を設定:
+#   reportsDirectory: 'testreport/coverage'
+
+# Jest の場合
+# jest.config.ts に以下を設定:
+#   coverageDirectory: 'testreport/coverage'
+```
 
 ## 依存方向の検証
 
-実装完了時に `npx depcruise src --config` を実行し、以下のルール違反がないことを確認する:
-
-- `features/X` → `features/Y` の直接依存がないこと
-- `shared` → `features` の依存がないこと
-- `infrastructure` → `features` の依存がないこと
-- `stores` → `features` の依存がないこと
-- 循環依存がないこと
+実装完了時に依存方向チェックコマンド（`project-config.md` セクション4.4 に記載）を実行し、
+依存方向ルールに違反していないことを確認する。
 
 ## Git操作
 
@@ -105,7 +209,15 @@ description: >
 
 ## 禁止事項
 
-- Zustandセレクタ内での `.filter()` / `.map()` / `.sort()`（無限ループの原因）
 - 仕様書にない機能の追加
 - ユーザーデータの暗黙的な削除・上書き
 - `--no-verify` によるフック迂回
+- `docs/development-patterns.md` に記載されたアンチパターンの使用
+
+## 関連参照(必要に応じて Claude が load)
+
+@.claude/quality-gates.md
+@.claude/rules/document-management.md
+@.claude/rules/git-conventions.md
+@.claude/rules/workflow-advanced.md
+@.claude/pitfalls.md

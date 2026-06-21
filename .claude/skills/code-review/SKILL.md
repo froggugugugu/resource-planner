@@ -1,6 +1,14 @@
 ---
 name: code-review
-description: Reviews code changes for quality, conventions compliance, performance, and security. Applies when the user asks to review code, check implementation quality, or validate changes against project standards. Read-only — never modifies source code.
+version: 1.0.0
+description: >
+  This skill should be used when the user asks to "review code", "check code quality", "validate changes",
+  or mentions "コードレビュー", "品質チェック", "レビュー".
+  Source-code read-only — never modifies source code or test files.
+  Outputs review report to output/reports/review/ (requires Write permission to output/reports/review/).
+  Takes optional argument: /code-review <target-file or instruction>
+argument-hint: "<対象ファイル or 指示>"
+allowed-tools: Read, Glob, Grep, Bash(git *), Write(output/**), WebSearch, WebFetch, mcp__context7__resolve-library-id, mcp__context7__query-docs
 context: fork
 ---
 
@@ -9,6 +17,13 @@ context: fork
 プロジェクトのコード変更をレビューするスキル。
 `CLAUDE.md`の規約と[docs/development-patterns.md](../../../docs/development-patterns.md)のプロジェクト固有チェックリストに基づき、構造化されたフィードバックを返す。
 
+## 前提条件
+
+| 参照ファイル | 用途 | スタブ時のフォールバック |
+| ------------ | ---- | ----------------------- |
+| `docs/architecture.md` | アーキテクチャパターン | `project-config.md` §4 を直接参照 |
+| `docs/development-patterns.md` | コード規約・アンチパターン | `project-config.md` §11 を直接参照 |
+
 ## 基本姿勢
 
 - **ソースコードは一切変更しない**（読み取り専用）
@@ -16,6 +31,34 @@ context: fork
 - 重要度を明示する（MUST / SHOULD / CONSIDER）
 - 良い点も言及する（指摘だけにしない）
 - 仕様書（タスクファイル）の要件を満たしているかを最優先で確認する
+
+## 使い方
+
+```text
+/code-review <対象ファイル or レビュー指示>
+```
+
+引数は省略可能。省略した場合はgit diffの変更範囲を対象とする。
+ファイルパスを指定した場合はそのファイルの変更をレビューする。
+
+### 例
+
+```text
+/code-review 直近のコミットをレビューする
+/code-review src/features/assignment/
+/code-review output/tasks/TASK_auth.md
+```
+
+### 出力先
+
+- デフォルト: 会話内でレポートを提示
+- ファイル出力: `output/reports/review/REVIEW_<対象>.md`（`output/`ディレクトリが存在する場合）
+
+### 他スキルとの連携
+
+| 前工程 | 本スキル | 後工程 |
+| ------ | -------- | ------ |
+| `/implementing-features` `/ui-ux-design` `/refactoring` | `/code-review` | （最終工程） |
 
 ## レビューワークフロー
 
@@ -41,41 +84,34 @@ context: fork
 
 ### 3. アーキテクチャ準拠
 
-- Feature-Sliced Designに沿っているか（`src/features/{feature}/`配下の配置）
-- Zustandストアの使い方が正しいか（[docs/development-patterns.md](../../../docs/development-patterns.md)参照）
-- Zodスキーマと型の一貫性
-- `@/`パスエイリアスの使用
+- プロジェクトのアーキテクチャパターン（`docs/architecture.md` 参照）に沿っているか
+- 状態管理の使い方が正しいか（[docs/development-patterns.md](../../../docs/development-patterns.md)参照）
+- スキーマと型の一貫性
+- パスエイリアスの使用
 - 依存方向ルールに違反していないか（`CLAUDE.md`「アーキテクチャガバナンス」参照）
-  - `features/X` → `features/Y` の直接import禁止
-  - `shared` → `features` 禁止
-  - `infrastructure` → `features` 禁止
-  - `stores` → `features` 禁止
-  - 循環依存禁止
-- `npx depcruise src --config` でerrorが出ないか
 
 ### 4. パフォーマンス
 
-- `useMemo`/`useCallback`が適切に使われているか（過剰でも不足でもなく）
-- Zustandセレクタ内で`.filter()`/`.map()`/`.sort()`をしていないか（無限ループの原因）
-- AG Gridの列定義が`useMemo`でメモ化されているか
+- メモ化が適切に使われているか（過剰でも不足でもなく）
+- `docs/development-patterns.md` に記載されたパフォーマンス関連のアンチパターンがないか
 - 不要な再レンダリングが発生しないか
 
 ### 5. セキュリティ
 
-- XSS: `dangerouslySetInnerHTML`の使用がないか
+- XSS: 安全でないHTML挿入がないか
 - 入力値のサニタイゼーション/バリデーション
-- localStorageに機密情報を保存していないか
+- `project-config.md` セクション10のセキュリティポリシーに違反していないか
 
 ### 6. ダークモード対応
 
-- 色指定がライト/ダーク両対応か（`dark:`プレフィックス、またはshadcn/uiのセマンティックカラー）
+- 色指定がライト/ダーク両対応か
 - ハードコードされた色値がないか
 
 ### 7. テスト
 
 - 重要なロジックにユニットテストがあるか
 - テストが仕様の振る舞いを検証しているか（実装詳細のテストではなく）
-- `describe`/`it`の説明文が日本語で振る舞いを明記しているか
+- テストの説明文が振る舞いを明記しているか
 
 ### 8. 後方互換性
 
@@ -86,10 +122,68 @@ context: fork
 ### 9. ドキュメント同期
 
 - 実装変更に伴い `docs/` 配下が更新されているか
-- ルート・ストア・コマンド変更 → `docs/project.md` が最新か
-- feature・コンポーネント・テストファイル変更 → `docs/architecture.md` が最新か
-- Zodスキーマ・バリデーションルール変更 → `docs/data-model.md` が最新か
 - ドキュメント未更新の場合は MUST 指摘として報告する
+
+### 10. 定量計測(Eval / Metrics)
+
+**ゲート 5(検証完了)を客観化するための定量データ収集**。本スキルは読み取り専用のため計測コマンドは実行せず、既存の計測成果物・CI ログ・親セッションから提示されたデータを集約する。
+
+| 指標 | 取得元 | NG 判定の目安 |
+| ---- | ------ | ------------- |
+| カバレッジ delta | `testreport/coverage/` または CI 出力 | `project-config.md` §6 の目標を下回る |
+| 静的解析エラー delta | lint 出力 / CI ログ | 新規エラーが 1 件以上 |
+| バンドルサイズ delta | build 出力 / CI ログ | 既定の閾値を超える増加(`project-config.md` §6 で定義時) |
+| 性能メトリクス delta | `/performance` の出力 / `testreport/` | 既存ベースラインを劣化 |
+| テスト失敗数 | CI ログ | 1 件以上 |
+
+- 計測データが**未提示**で `project-config.md` §6 に基準がある場合は **CONSIDER 指摘**(「ゲート 5 検証データを添付してください」)
+- 計測データの**改善**(カバレッジ上昇等)は「良い点」セクションで明示する
+- 詳細は `@.claude/quality-gates.md` を参照
+
+## 出力契約
+
+### セクション定義
+
+| セクション | 必須 | 制約 |
+| ---------- | ---- | ---- |
+| 概要 | ✅ | 変更ファイル数・影響範囲・仕様準拠・ドキュメント同期を必ず含む |
+| 指摘事項 | ✅ | MUST→SHOULD→CONSIDER の順。各レベルが0件でも見出しは残す |
+| 良い点 | ✅ | 最低1件。指摘だけのレビューにしない |
+| 総合判定 | ✅ | 列挙値から1つ選択 |
+
+### 重要度定義
+
+| レベル | 判定基準 | 例 |
+| ------ | -------- | -- |
+| **MUST** | CLAUDE.mdルール違反、既存テスト破壊、セキュリティ脆弱性、依存方向違反、docs/未更新 | アンチパターン使用、ハードコード色値、XSS |
+| **SHOULD** | 可読性低下、パフォーマンス懸念、テスト不足、命名不適切 | メモ化欠如、any型使用、テストカバレッジ不足 |
+| **CONSIDER** | 改善提案、代替アプローチ、コード整理 | 関数抽出の提案、型定義の整理 |
+
+### 総合判定の列挙値
+
+| 判定 | 条件 |
+| ---- | ---- |
+| **承認** | MUST指摘が0件 |
+| **条件付き承認（MUST修正後）** | MUST指摘が1件以上かつ修正可能 |
+| **要修正** | アーキテクチャ変更や設計見直しが必要 |
+
+### 指摘記述フォーマット
+
+```
+- [ ] `ファイルパス:行番号` 指摘内容。**理由**: 根拠。**修正案**: 具体的な修正方法。
+```
+
+- ファイルパスは `src/` からの相対パス
+- 行番号は省略不可（範囲の場合は `L10-L15`）
+- MUST/SHOULDには修正案を必ず付記。CONSIDERは任意
+
+### 語彙制約
+
+| 用語 | 定義 |
+| ---- | ---- |
+| 仕様準拠 | タスクファイルの受け入れ基準をすべて満たしていること |
+| ドキュメント同期 | 実装変更に対応する `docs/` の更新が完了していること |
+| 依存方向違反 | CLAUDE.md「アーキテクチャガバナンス」のルールへの抵触 |
 
 ## レポートフォーマット
 
@@ -99,19 +193,31 @@ context: fork
 ## 概要
 - 変更ファイル数: X
 - 影響範囲: [機能名]
-- 仕様準拠: OK / NG（詳細は下記）
-- ドキュメント同期: OK / NG（docs/ の更新状況）
+- 仕様準拠: OK / NG
+- ドキュメント同期: OK / NG
+
+## 定量計測(任意 / ゲート 5 根拠)
+
+| 指標 | 変更前 | 変更後 | delta | 取得元 |
+| ---- | ------ | ------ | ----- | ------ |
+| カバレッジ | XX.X% | YY.Y% | +ΔΔ% | testreport/coverage |
+| 静的解析エラー | N | M | -K | npm run lint |
+| バンドルサイズ | XX KB | YY KB | +ΔΔ% | npm run build |
+| 性能メトリクス | XX ms | YY ms | +ΔΔ% | output/reports/performance / testreport |
+| テスト失敗数 | N | M | -K | CI ログ / testreport |
+
+> データ未提示時はこのセクションを `_計測データ未提示_` と記載
 
 ## 指摘事項
 
 ### MUST（必須修正）
-- [ ] [ファイル:行] 指摘内容。理由。修正案。
+- [ ] `ファイル:行` 指摘内容。**理由**: 根拠。**修正案**: 修正方法。
 
 ### SHOULD（推奨修正）
-- [ ] [ファイル:行] 指摘内容。理由。修正案。
+- [ ] `ファイル:行` 指摘内容。**理由**: 根拠。**修正案**: 修正方法。
 
 ### CONSIDER（検討）
-- [ ] [ファイル:行] 指摘内容。理由。
+- [ ] `ファイル:行` 指摘内容。**理由**: 根拠。
 
 ## 良い点
 - [具体的に良かった点]
@@ -126,3 +232,9 @@ context: fork
 - 仕様書にない要件の追加要求
 - 個人の好みに基づく指摘（プロジェクト規約に根拠がないもの）
 - 重要度なしの曖昧な指摘
+
+## 関連参照(必要に応じて Claude が load)
+
+@.claude/guardrails.md
+@.claude/rules/workflow-advanced.md
+@.claude/pitfalls.md
