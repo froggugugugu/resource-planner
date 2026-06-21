@@ -10,16 +10,15 @@
 - 重要な決定事項は定期的にマークダウンファイルに記録する
 - CLAUDE.md は横断ルールのみ記載し、詳細な手順はスキルに委譲する
 - 利用可能なスキル:
-  - `/plan` — 設計ドキュメント生成（読み取り専用、実装不可）
-  - `/implementing-features` — TDDによる機能実装・バグ修正
-  - `/ui-ux-design` — デザインシステム準拠のUI/UX設計・レビュー・実装
-  - `/e2e-testing` — Playwright E2Eテスト作成
-  - `/code-review` — コードレビュー（読み取り専用）
-- スキル選定の判断基準:
+  - コア: `/plan`（設計・読取専用）, `/implementing-features`（TDD実装）, `/ui-ux-design`（UI/UX）, `/e2e-testing`（Playwright E2E）, `/code-review`（レビュー・読取専用）
+  - 要件・設計: `/brainstorm`（前提整理）, `/prd`（要件定義）, `/architecture`（アーキ設計）
+  - 品質・監査: `/security-scan`, `/legal-check`, `/performance`, `/refactoring`, `/hig-compliance`, `/design-system-audit`
+  - 記録・運用: `/adr`（設計判断記録）, `/review-fix`（PRレビュー対応）, `/harness-refine`（ハーネス自己点検）
+- スキル選定の判断基準（主要パス）:
   - 新機能実装 → `/implementing-features`
   - UI調整・ダークモード・a11y → `/ui-ux-design`
-  - 大きな変更の事前設計 → `/plan`
-  - PR前の品質確認 → `/code-review`
+  - 大きな変更の事前設計 → `/plan`（要求が曖昧なら先に `/brainstorm` → `/prd`）
+  - PR前の品質確認 → `/code-review`（レビュー指摘の対応は `/review-fix`）
   - ユーザーフローの自動テスト → `/e2e-testing`
 
 ## 開発原則
@@ -149,6 +148,22 @@
 - フック失敗時はエラーの原因を修正する（フックを無効化しない）
 - コミット前に `npx lint-staged` が自動実行される（pre-commit）
 - プッシュ前に lint・型チェック・テスト・依存方向チェックが自動実行される（pre-push）
+
+## ハーネス構成（project-blueprint 由来）
+
+本リポジトリは project-blueprint ハーネスを適用している。横断ルールは本ファイル、
+人間が決める設定は `project-config.md`（§1〜§13）に集約する。プロジェクト固有の知識
+（FSD・Zustand 規約・落とし穴・E2E パターン等）は引き続き下記 `docs/` を正典とする。
+
+- **`project-config.md`** — 技術スタック・コマンド・品質基準・モデル選定戦略（人間の決定領域）
+- **`constitution.md`** — 7 つの不変原則（`scan-harness.sh` が hash 監視で改竄検出）
+- **`.claude/agents/`** — 単発専門家（explorer / researcher / planner / security-reviewer / performance-analyst / doc-synchronizer / doc-writer / test-writer）
+- **`.claude/teams/`** — マルチエージェント編成テンプレート（`TEAM_PJM.md` がフルライフサイクル推奨）
+- **`.claude/quality-gates.md` / `.claude/pitfalls.md` / `.claude/guardrails.md`** — 品質ゲート定義・落とし穴集・安全機構一覧
+- **成果物フロー** — `input/requirements/`（人間入力）→ AI 処理 → `output/{prd,design,tasks,reports}/`（レビュー対象）。ツール生データは `testreport/`（gitignore）
+
+> 安全機構: `.claude/settings.json` に 12 hooks（safety-check / protect-files / scan-harness 等）を配線済み。
+> 既存スキルもこのハーネス上で動作する。
 
 ## プロジェクト固有情報
 
