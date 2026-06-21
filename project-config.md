@@ -125,6 +125,11 @@ npm run depcruise        # 依存方向チェック (dependency-cruiser)
 
 ## 4. アーキテクチャ <!-- 推奨 -->
 
+> 本プロジェクトのアーキテクチャ詳細は以下を正典とする（ここでは重複させず参照のみ）:
+> - [docs/architecture.md](docs/architecture.md) — ディレクトリ構成・レイヤー・ドキュメント責務
+> - [docs/development-patterns.md](docs/development-patterns.md) — Zustand / AG Grid / データモデル等の実装パターン
+> - [CLAUDE.md](CLAUDE.md) の「アーキテクチャガバナンス」 — 依存方向ルール（`npm run depcruise` で検出）
+
 ### 4.1 パターン
 
 <!-- プロジェクト規模に合わせてパターンを選定する。以下のガイドを参考に記入。 -->
@@ -138,28 +143,23 @@ npm run depcruise        # 依存方向チェック (dependency-cruiser)
 | 大規模・長期運用 | 5名以上 | FSD（Feature-Sliced Design） | 厳格なレイヤー制約。大規模チームの秩序を維持 |
 | Next.js / Nuxt | — | Pages-Based | ファイルシステムルーティングに準拠 |
 
-選定パターン: <!-- 例: シンプル構成 / モジュラー / FSD / Pages-Based -->
+選定パターン: FSD（Feature-Sliced Design）。
 
 ### 4.2 パスエイリアス
 
-<!-- 例: `@/` → `src/` -->
+`@/` → `src/`
 
 ### 4.3 ディレクトリ構成（概要）
 
-<!-- ソースコードのディレクトリ構成を記入。詳細は docs/architecture.md にAIが生成する。 -->
-<!-- §4.1で選定したパターンに合わせて記入する。下の折りたたみにパターン別の具体例あり。 -->
-
-```text
-src/
-├── <!-- プロジェクトのディレクトリ構成を記入 -->
-```
+FSD レイヤー構成（`src/features/`, `src/shared/`, `src/stores/`, `src/lib/`, `src/infrastructure/` 等）。
+詳細は [docs/architecture.md](docs/architecture.md) を正典とする。
 
 ### 4.4 依存方向ルール
 
-<!-- プロジェクトの依存方向ルールを記入。検出コマンドも記載する。 -->
-<!-- §4.1で選定したパターンに合わせて記入する。下の折りたたみにパターン別の具体例あり。 -->
+依存方向ルールは [CLAUDE.md](CLAUDE.md) の「アーキテクチャガバナンス」を正典とする
+（`features/X → features/Y` 直接依存禁止 / `shared → features` 禁止 / `stores → features` 禁止 / 循環依存禁止 等）。
 
-- <!-- 依存方向ルールを記入 -->
+- 検出コマンド: `npm run depcruise`（`.dependency-cruiser.cjs` 準拠）
 - 循環依存: 禁止
 - 検出コマンド: <!-- 例: `npx depcruise src --config` / なし -->
 
@@ -369,11 +369,13 @@ output/reports/                ← 人間向けサマリー（Git管理）
 
 ### 既知の落とし穴
 
-<!-- 開発中に発見された問題・注意点をAIが追記する。初期値として既知の問題があれば記入。 -->
+> 既知の落とし穴・過去の問題事例は [docs/development-patterns.md](docs/development-patterns.md) の
+> 「9. 過去の問題事例」および各セクション（Zustand セレクタ無限ループ / AG Grid 重複行 / 数値精度 等）を正典とする。
+> 開発中に新たに発見した問題は AI が下表または docs/development-patterns.md に追記する。
 
 | 問題 | 原因 | 対策 |
 | ---- | ---- | ---- |
-| <!-- 問題の概要 --> | <!-- 根本原因 --> | <!-- 対策 --> |
+| Zustand 無限ループ | セレクタ内で `.filter()` / `.map()` / `.sort()` | `useMemo` で派生（[docs/development-patterns.md](docs/development-patterns.md) §1.1） |
 
 ### フレームワーク固有パターン
 

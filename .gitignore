@@ -9,7 +9,6 @@ dist/
 
 # Claude Code internal files
 .claude/tasks/
-.claude/teams/
 .claude/projects/
 .claude/plans/
 .claude/settings.local.json
